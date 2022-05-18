@@ -38,7 +38,7 @@ const comment = (flag = true) => `${flag ? '// ' : ''}`
 const crudDefaultKeys = ['_id', '__STATE__', 'creatorId', 'createdAt', 'updaterId', 'updatedAt']
 const supportedFormats = ['first-name', 'name', 'last-name', 'surname']
 
-const createCrud = (name: string, _: string, opts: Record<string, any>, schema?: Record<string, any>): string => {
+const createCrud = (name: string, opts: Record<string, any>, schema?: Record<string, any>): string => {
   const includes: string[] = []
   const generators: Record<string, string> = {} 
   if(schema && schema.properties && Object.keys(schema.properties).filter((k) => !crudDefaultKeys.includes(k)).length > 0) {
@@ -89,7 +89,7 @@ module.exports = ${name}
   // return true
 }
 
-const routeTemplates = ['-get', '-get-by-id', '-add-new', '-stream']
+const routeTemplates = ['-get', '-get-by-id', '-add-new', '-stream', '-edit', '-delete']
 const variants = [':ok', ':ko']
 
 const addRoutes = (mocks: any, name: string): string => {
@@ -122,22 +122,24 @@ const removeRoutes = (mocks: any, name: string): string => {
 }
 
 export const listCruds = async (print = true): Promise<string[]> => {
-  const cruds = await readdir(CRUD_BASE_DIR).catch((reason) => {
-    const questions = [{
-      name: 'mkdirp',
-      type: 'confirm',
-      message: `${CRUD_BASE_DIR} does not exist. Do you want to create it?`
-    }]
-    return inquirer.prompt(questions).then(({mkdirp: shouldCreate}) => {
-      if (shouldCreate) {
-        return mkdirp(CRUD_BASE_DIR).then(() => {
-          return readdir(CRUD_BASE_DIR)
-        })
-      } else {
-        throw new TypeError(reason)
-      }
+  const cruds = await readdir(CRUD_BASE_DIR)
+    .then((list) => list.filter((name) => name !== '.gitkeep'))
+    .catch((reason) => {
+      const questions = [{
+        name: 'mkdirp',
+        type: 'confirm',
+        message: `${CRUD_BASE_DIR} does not exist. Do you want to create it?`
+      }]
+      return inquirer.prompt(questions).then(({mkdirp: shouldCreate}) => {
+        if (shouldCreate) {
+          return mkdirp(CRUD_BASE_DIR).then(() => {
+            return readdir(CRUD_BASE_DIR)
+          })
+        } else {
+          throw new TypeError(reason)
+        }
+      })
     })
-  })
 
   if(!print) {
     return cruds
@@ -167,13 +169,6 @@ export const createQuestions = async (state: CLIState): Promise<QuestionCollecti
       validate: (input: any) => existsAlready(state.cruds, input)
     },
     {
-      name: 'crud_endpoint',
-      type: 'input',
-      message: 'Choose endpoint:',
-      default: (answers: any) => answers.crud_name,
-      validate: (input: any) => typeof input === 'string' && input !== '' || 'Invalid input'
-    },
-    {
       name: 'has_schema',
       type: 'confirm',
       message: 'Do you already have a schema to provide?',
@@ -182,8 +177,8 @@ export const createQuestions = async (state: CLIState): Promise<QuestionCollecti
     {
       name: 'which_schema',
       type: 'list',
-      choices: ['editor', 'file'],
-      default: 'editor',
+      choices: ['file', 'editor'],
+      default: 'file',
       message: 'How you wanna insert the schema:',
       when: (answers: any) => answers.has_schema
     },
@@ -263,7 +258,6 @@ export const handleCrudCreation = async (state: CLIState, questions: QuestionCol
     return Promise.all([answers, undefined])
   }).then(([{
     crud_name,
-    crud_endpoint,
     has_schema,
     which_schema,
     editor_schema,
@@ -285,7 +279,7 @@ export const handleCrudCreation = async (state: CLIState, questions: QuestionCol
     }
 
     const crudPath = resolve(state.__dirname, CRUD_BASE_DIR, `${crud_name}.js`)
-    const collectionPromise = Promise.resolve(createCrud(crud_name, crud_endpoint, {
+    const collectionPromise = Promise.resolve(createCrud(crud_name, {
       quantity, sorting
     }, schema))
       .then((content) => state.linter.js(content))

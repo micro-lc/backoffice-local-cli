@@ -19,6 +19,7 @@ export const resetTutorialQuestions = async (): Promise<QuestionCollection<Answe
       message: 'This routine will swap the content of your backend \
 with the content of your ".reset" folder. \
 If you tampered with it, this reset won\'t work.\n\
+👉 Any extra-file not clashing with the tutorial won\'t be removed.\n\
 👉 Please commit before resetting!.\n\
 ⚠️ Proceed?'
     }
