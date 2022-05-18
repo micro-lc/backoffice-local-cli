@@ -42,10 +42,27 @@ jobs:
       if: ${{ (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.base_ref == 'main') && matrix.node-version == '16.x' }}
       uses: actions/cache@v2
       with:
-        path: ${{ env.context }}dist/unpkg
+        path: ${{ env.context }}dist
+        key: ${{ runner.os }}-dist-${{ env.cache-name }}-${{ github.sha }}
+
+  release:
+    needs: ['test']
+    if: ${{ (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 16.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 16.x
+    - name: Cache Pull
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.context }}dist
         key: ${{ runner.os }}-dist-${{ env.cache-name }}-${{ github.sha }}
     - uses: JS-DevTools/npm-publish@v1
-      if: ${{ startsWith(github.ref, 'refs/tags/') }}
       with:
         access: 'public'
         token: ${{ secrets.NPM_TOKEN }}
+        # tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref.replace(/\/?refs\/tags\/v?/, '') || 'latest' }}
