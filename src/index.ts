@@ -13,6 +13,9 @@ import {
 import {
   actionQuestions, handleAction
 } from './actions.js'
+import {
+  handleResetTutorial, resetTutorialQuestions
+} from './reset-tutorial.js'
 
 export default async (__dirname: string) => {
   // show script introduction
@@ -57,6 +60,13 @@ export default async (__dirname: string) => {
     state.cruds = cruds
     await actionQuestions(state as CLIState)
       .then(handleAction)
+    break
+  }
+  case 'reset-tutorial':
+  {
+    state.cruds = []
+    await resetTutorialQuestions()
+      .then((q) => handleResetTutorial(state as CLIState, q))
     break
   }
   case 'exit':

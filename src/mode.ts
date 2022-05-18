@@ -1,6 +1,6 @@
 import inquirer from 'inquirer'
 
-export type Modes = 'add-crud' | 'delete-crud' | 'actions' | 'exit'
+export type Modes = 'add-crud' | 'delete-crud' | 'actions' | 'exit' | 'reset-tutorial'
 
 export const modeQuestions = async (): Promise<Modes> => {
   const questions = [
@@ -19,6 +19,10 @@ export const modeQuestions = async (): Promise<Modes> => {
         {
           name: 'Pre-configured actions',
           value: 'actions'
+        },
+        {
+          name: 'Reset Tutorial',
+          value: 'reset-tutorial'
         },
         {
           name: 'Exit',
