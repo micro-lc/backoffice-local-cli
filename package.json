@@ -6,7 +6,8 @@
   "packageManager": "yarn@3.2.1",
   "module": "dist/index.js",
   "bin": {
-    "mgmt": "./dist/index.js"
+    "create-lib": "./dist/create-lib/index.js",
+    "mgmt": "./dist/mgmt/index.js"
   },
   "type": "module",
   "files": [
@@ -58,6 +59,7 @@
     "commander": "^9.3.0",
     "figlet": "^1.5.2",
     "fs-extra": "^10.1.0",
+    "handlebars": "^4.7.7",
     "inquirer": "^9.0.0",
     "mkdirp": "^1.0.4",
     "prettier": "^2.7.1",
