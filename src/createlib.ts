@@ -9,8 +9,10 @@ import {
 } from 'path'
 import {promises as fsp} from 'fs'
 import hb from 'handlebars'
-import type {FileWithPath} from './templates/createlib/data'
-import {exec} from 'child_process'
+import type {FileWithPath} from './templates/create-lib/data'
+import {
+  exec, execSync
+} from 'child_process'
 
 export default async () => {
   
@@ -21,7 +23,6 @@ export default async () => {
   
   exit()
 }
-
 
 const createQuestions = (): QuestionCollection<Answers> => {
   return [
@@ -36,44 +37,75 @@ const createQuestions = (): QuestionCollection<Answers> => {
       type: 'confirm',
       message: 'Do you want to use typeScript?',
       default: true
+    },
+    {
+      name: 'git_init',
+      type: 'confirm',
+      message: 'Do you want to initialize a git repository?',
+      default: true
+    },
+    {
+      name: 'git_remote',
+      type: 'input',
+      message: 'Choose the git remote:',
+      default: undefined,
+      when: (answers: any) => answers.git_init
+    },
+    {
+      name: 'docker_image',
+      type: 'input',
+      message: 'Choose the name of the docker image (leave empty to use the name of the library):',
+      default: undefined
     }
   ]
 }
 
 const handleLibCreation = async (questions: QuestionCollection<Answers>): Promise<void> => {
-  const compiler = new TemplateCompiler({options: {noEscape: true}})
+  const compiler = new TemplateCompiler({options: {
+    noEscape: true, recursive: true
+  }})
+  let answers: Answers = {}
 
   await inquirer.prompt(questions)
-    .then((answers) => {
+    .then((ans) => {
+      if (!ans.docker_image) {
+        ans.docker_image = ans.lib_name
+      }
+
+      answers = ans
+
       const {
-        lib_name, is_typescript
+        lib_name, is_typescript,  git_init, git_remote
       } = answers
 
+      
+      const gitUser: Record<string, string> = {}
+      exec('git config user.name', (_, output) => gitUser.name = output.trim())
+      exec('git config user.email', (_, output) => gitUser.email = output.trim())
+      
       compiler.setContext({
-        ...answers, ts: is_typescript ? 'ts' : 'js'
+        ...answers,
+        ts: is_typescript ? 'ts' : 'js',
+        gitUser
       })
       compiler.addHelpers({
         'ts?': (str) => is_typescript ? str : '',
-        'js?': (str) => is_typescript ? '' : str,
+        'js?': (str) => !is_typescript ? str : '',
+        'git?': (str) => git_init ? str : '',
+        'remote?': (str) => git_remote !== undefined ? str : '',
       })
 
-      return Promise.all([mkdirp(`./${lib_name}`), answers])
+      return mkdirp(`./${lib_name}`)
     })
-    .then(([dstDir, answers]) => {
+    .then((dstDir) => {
       if (!dstDir) {
         throw new Error()
       }
       
-      const files = import('./templates/createlib/data').then(({
-        common, typeScript
-      }) => {
+      const files = import('./templates/create-lib/data').then(({default: fileData}) => {
         const data: FileWithPath[] = []
-        
-        const files = answers.is_typescript ? {
-          ...common, ...typeScript
-        } : common
 
-        Object.values(files).forEach(([fileName, fileContent]) => {
+        fileData.forEach(([fileName, fileContent]) => {
           const dstPath = compiler.compile(joinPath(dstDir, fileName))
           const processedContent = compiler.compile(fileContent)
           data.push([dstPath, processedContent])
@@ -81,9 +113,9 @@ const handleLibCreation = async (questions: QuestionCollection<Answers>): Promis
         return data
       })
 
-      return Promise.all([files, answers])
+      return files
     })
-    .then(async ([files, answers]) => {
+    .then(async (files) => {
       const promises: Promise<void>[] = []
       files?.forEach(([filePath, fileContent]) => {
         const dir = dirname(filePath)
@@ -95,13 +127,24 @@ const handleLibCreation = async (questions: QuestionCollection<Answers>): Promis
       })
       await Promise.all(promises)
 
-      return answers
+    }).then(() => {
+      const {
+        lib_name, git_init, git_remote
+      } = answers
 
-    }).then((answers) => {
-      if (answers && answers.lib_name) {
-        exec(`cd ${answers.lib_name}`, (_, err) => console.error(err))
-        exec('git init', (_, err) => console.error(err))
+      if (lib_name && git_init) {
+        execSync('git init', {cwd: `./${lib_name}`})
+        execSync('git checkout -b main', {cwd: `./${lib_name}`})
+        if (git_remote !== undefined) {
+          execSync(`git remote add origin ${git_remote}`, {cwd: `./${lib_name}`})
+          execSync('git commit --allow-empty -m "init"', {cwd: `./${lib_name}`})
+          execSync('git fetch', {cwd: `./${lib_name}`})
+          execSync('git branch -u origin/main', {cwd: `./${lib_name}`})
+        }
       }
+
+      execSync('yarn set version stable', {cwd: `./${lib_name}`})
+
     })
     .catch((err) => {
       console.error(err)
@@ -154,14 +197,25 @@ class TemplateCompiler {
   setContext (context: Record<string, any>) {
     this.gloalContext = context
   }
-  
-  compile (str: string, context?: Record<string, any>, options?: Record<string, any>) {
+
+  compile (str: string, context?: Record<string, any>, options?: Record<string, any>): string {
     const options_ = {
       ...this.globalOptions, ...options
     }
     const context_ = {
       ...this.gloalContext, ...context
     }
-    return hb.compile(str, options_)(context_)
+
+    let compiledStr = hb.compile(str, options_)(context_)
+    
+    if (options_.recursive) {
+      let lastStr = str
+      while(compiledStr !== lastStr) {
+        lastStr = compiledStr
+        compiledStr = hb.compile(compiledStr, options_)(context_)
+      }
+    }
+
+    return compiledStr
   }
 }
