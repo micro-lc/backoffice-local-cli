@@ -10,7 +10,7 @@ build({
   outdir: 'dist',
   minify: true,
   bundle: true,
-  format: 'esm',
+  format: 'cjs',
   plugins: [
     NodeResolvePlugin({
       extensions: ['.ts', '.js'],
