@@ -2,14 +2,14 @@ import type {
   Answers, QuestionCollection
 } from 'inquirer'
 import inquirer from 'inquirer'
-import {exit} from './init'
+import {exit} from '../init'
 import mkdirp from 'mkdirp'
 import {
   join as joinPath, dirname
 } from 'path'
 import {promises as fsp} from 'fs'
 import hb from 'handlebars'
-import type {FileWithPath} from './templates/create-lib/data'
+import type {FileWithPath} from '../templates/create-lib/data'
 import {
   exec, execSync
 } from 'child_process'
@@ -104,7 +104,7 @@ const handleLibCreation = async (questions: QuestionCollection<Answers>): Promis
         throw new Error()
       }
       
-      const files = import('./templates/create-lib/data').then(({default: fileData}) => {
+      const files = import('../templates/create-lib/data').then(({default: fileData}) => {
         const data: FileWithPath[] = []
 
         fileData.forEach(([fileName, fileContent, recursive = true]) => {

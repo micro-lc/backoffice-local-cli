@@ -1,21 +1,21 @@
 import Ajv from 'ajv'
 import chalk from 'chalk'
 import prettier from 'prettier'
-import log from './logger.js'
+import log from '../logger.js'
 import {
   exit, init
-} from './init.js'
-import {modeQuestions} from './mode.js'
-import type {CLIState} from './types'
+} from '../init.js'
+import {modeQuestions} from '../mode.js'
+import type {CLIState} from '../types'
 import {
   createQuestions, handleCrudCreation, handleCrudRemoval, listCruds, removeQuestions
-} from './cruds.js'
+} from '../cruds.js'
 import {
   actionQuestions, handleAction
-} from './actions.js'
+} from '../actions.js'
 import {
   handleResetTutorial, resetTutorialQuestions
-} from './reset-tutorial.js'
+} from '../reset-tutorial.js'
 
 export default async (__dirname: string) => {
   // show script introduction
