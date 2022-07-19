@@ -6,7 +6,7 @@ import {NodeResolvePlugin} from '@esbuild-plugins/node-resolve'
 
 build({
   platform: 'node',
-  entryPoints: ['index.ts'],
+  entryPoints: ['./src/mgmt/index.ts', './src/create-lib/index.ts'],
   outdir: 'dist',
   minify: true,
   bundle: true,
