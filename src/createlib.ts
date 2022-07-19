@@ -47,15 +47,13 @@ const createQuestions = (): QuestionCollection<Answers> => {
     {
       name: 'git_remote',
       type: 'input',
-      message: 'Choose the git remote:',
-      default: undefined,
+      message: 'Choose the git remote (leave empty in case of no remote):',
       when: (answers: any) => answers.git_init
     },
     {
       name: 'docker_image',
       type: 'input',
-      message: 'Choose the name of the docker image (leave empty to use the name of the library):',
-      default: undefined
+      message: 'Choose the name of the docker image (leave empty to use the name of the library):'
     }
   ]
 }
@@ -70,6 +68,9 @@ const handleLibCreation = async (questions: QuestionCollection<Answers>): Promis
     .then((ans) => {
       if (!ans.docker_image) {
         ans.docker_image = ans.lib_name
+      }
+      if (!ans.git_remote) {
+        ans.git_remote = undefined
       }
 
       answers = ans
@@ -93,6 +94,7 @@ const handleLibCreation = async (questions: QuestionCollection<Answers>): Promis
         'js?': (str) => !is_typescript ? str : '',
         'git?': (str) => git_init ? str : '',
         'remote?': (str) => git_remote !== undefined ? str : '',
+        'ignore': (str) => str
       })
 
       return mkdirp(`./${lib_name}`)
@@ -105,9 +107,9 @@ const handleLibCreation = async (questions: QuestionCollection<Answers>): Promis
       const files = import('./templates/create-lib/data').then(({default: fileData}) => {
         const data: FileWithPath[] = []
 
-        fileData.forEach(([fileName, fileContent]) => {
+        fileData.forEach(([fileName, fileContent, recursive = true]) => {
           const dstPath = compiler.compile(joinPath(dstDir, fileName))
-          const processedContent = compiler.compile(fileContent)
+          const processedContent = compiler.compile(fileContent, {}, {recursive})
           data.push([dstPath, processedContent])
         })
         return data
@@ -134,12 +136,12 @@ const handleLibCreation = async (questions: QuestionCollection<Answers>): Promis
 
       if (lib_name && git_init) {
         execSync('git init', {cwd: `./${lib_name}`})
-        execSync('git checkout -b main', {cwd: `./${lib_name}`})
         if (git_remote !== undefined) {
           execSync(`git remote add origin ${git_remote}`, {cwd: `./${lib_name}`})
-          execSync('git commit --allow-empty -m "init"', {cwd: `./${lib_name}`})
-          execSync('git fetch', {cwd: `./${lib_name}`})
-          execSync('git branch -u origin/main', {cwd: `./${lib_name}`})
+          execSync('git fetch origin', {cwd: `./${lib_name}`})
+          execSync('git checkout -b main origin/main', {cwd: `./${lib_name}`})
+        } else {
+          execSync('git checkout -b main', {cwd: `./${lib_name}`})
         }
       }
 

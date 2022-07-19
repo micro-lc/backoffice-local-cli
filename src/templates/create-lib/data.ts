@@ -1,8 +1,9 @@
 import nginxData from './nginx-data'
 import ciData from './ci-data'
 import srcData from './src-data'
+import scriptsData from './scripts-data'
 
-export type FileWithPath = [string, string]
+export type FileWithPath = [string, string, boolean?]
 
 const eslintignore: FileWithPath = ['.eslintignore',
   `# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
@@ -56,10 +57,14 @@ const eslintrc: FileWithPath = ['.eslintrc.json',
   `{
   "env": {
     "es2021": true,
-    "node": true
+    "node": true,
+    "browser": true{{js? ","}}
+    {{js? "\\"jest\\": true"}}
   },
   "extends": [
-    "eslint:recommended"{{ts? ", \\"plugin:@typescript-eslint/recommended\\""}}
+    "eslint:recommended",
+    {{ts? "\\"plugin:@typescript-eslint/recommended\\""}}
+    {{js? "\\"plugin:react/recommended\\""}}
   ],
   {{ts? "\\"parser\\": \\"@typescript-eslint/parser\\","}}
   "parserOptions": {
@@ -74,9 +79,10 @@ const eslintrc: FileWithPath = ['.eslintrc.json',
     "quotes": ["error", "single"],
     "semi": ["error", "never"],
     "object-curly-spacing": "error",
-    "object-curly-newline": ["error", { "minProperties": 2 }]{{ts? ","}}
+    "object-curly-newline": ["error", { "minProperties": 2 }],
     {{ts? "\\"@typescript-eslint/no-explicit-any\\": \\"off\\","}}
     {{ts? "\\"@typescript-eslint/no-empty-function\\": \\"off\\""}}
+    {{js? "\\"react/prop-types\\": 0"}}
   }
 }
 `]
@@ -111,20 +117,23 @@ const jest: FileWithPath = ['jest.config.{{ts}}',
   ],
   moduleNameMapper: {'^rxjs': ['rxjs']},
   testEnvironment: 'jsdom',
-  transform: {'^.+\\\\.[jt]sx?$': [
-    'esbuild-jest',
-    {
-      sourcemap: true,
-      loaders: {'.test.{{ts}}': '{{ts}}x'}
-    }
-  ]},
+  transform: {
+    '^.+\\\\.[jt]s{{ts? "x"}}?$': [
+      'esbuild-jest',
+      {
+        sourcemap: true,
+        loaders: {'.test.{{ts}}': '{{ts}}x'}
+      }
+    ]{{js? ","}}
+    {{js? "'^.+\\.[jt]sx?$': ['babel-jest']"}}
+  },
   testRegex: '(/__tests__/.*|\\\\.(test|spec))\\\\.({{ts}}|{{ts}}x)$',
   transformIgnorePatterns: [
     '../node_modules/(?!(@open-wc|@lit|lit|lit-html|lit-element|@esm-build|uuid)/)'
-  ]{{js? ","}}
-  {{js? "setupFilesAfterEnv: ["}}
-  {{js? "  '<rootDir>/testSetup.js'"}}
-  {{js? "]"}}
+  ],
+  setupFilesAfterEnv: [
+    '<rootDir>/testSetup.{{ts}}'
+  ]
 }
 
 {{js? "module.exports = config"}}
@@ -156,12 +165,13 @@ const packagejson: FileWithPath = ['package.json',
     {{ts? "\\"tsc\\": \\"tsc\\","}}
     "lint": "eslint src --ext .js,.ts,.jsx,.tsx",
     "lint-fix": "yarn lint --fix",
-    "build": "NODE_OPTIONS=--max-old-space-size=2500 vite build --mode production",
+    "build": "vite build --mode production",
     "unit": "NODE_ENV=test jest --passWithNoTests --watch",
     "test": "NODE_ENV=test jest --passWithNoTests",
     "coverage": "NODE_ENV=test jest --coverage",
     "docs:clear": "rimraf docs",
     "docs": "docgen --entryPoints src/index.{{ts}} --type components",
+    "new-cmp": "{{ts? "ts-"}}node ./scripts/new-cmp",
     "start": "vite"
   },
   "devDependencies": {
@@ -177,10 +187,12 @@ const packagejson: FileWithPath = ['package.json',
     "@testing-library/react-hooks": "^7.0.1",
     "@testing-library/user-event": "^13.2.1",
     {{ts? "\\"@types/jest\\": \\"^27.4.0\\","}}
+    {{ts? "\\"@types/mkdirp\\": \\"^1.0.2\\","}}
     {{ts? "\\"@types/node\\": \\"^17.0.14\\","}}
     {{ts? "\\"@typescript-eslint/eslint-plugin\\": \\"^4.29.2\\","}}
     {{ts? "\\"@typescript-eslint/parser\\": \\"^4.29.2\\","}}
     "esbuild": "^0.14.25",
+    {{js? "\\"babel-jest\\": \\"^26.0.0\\","}}
     "esbuild-jest": "^0.5.0",
     "eslint": "^7.32.0",
     "eslint-config-react-app": "^6.0.0",
@@ -191,7 +203,7 @@ const packagejson: FileWithPath = ['package.json',
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.0",
-    "eslint-plugin-react": "^7.24.0",
+    "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.2.0",
     "jest": "^26.6.3",
     "jest-fetch-mock": "^3.0.3",
@@ -281,15 +293,15 @@ const tsconfig: FileWithPath = ['{{ts}}config.json',
     "noImplicitThis": true,
     "skipLibCheck": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]{{ts? ","}}
-  {{ts? "\\"ts-node\\": {" }}
-  {{ts? "  \\"transpileOnly\\": true," }}
-  {{ts? "  \\"files\\": false," }}
-  {{ts? "  \\"compilerOptions\\": {" }}
-  {{ts? "    \\"module\\": \\"CommonJS\\"" }}
-  {{ts? "  }" }}
-  {{ts? "}" }}
+  "include": ["src", "scripts"],
+  "exclude": ["node_modules"],
+  "{{ts? "ts-"}}node": {
+    {{ts? "\\"transpileOnly\\": true,"}}
+    "files": false,
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }
 `]
 
@@ -305,6 +317,7 @@ export default [
   ...nginxData,
   ...ciData,
   ...srcData,
+  ...scriptsData,
 
   eslintignore,
   gitignore,
@@ -314,8 +327,12 @@ export default [
   packagejson,
   vite,
   tsconfig,
-  readme,
+  // readme,
   babel,
   yarnrc,
   yarnLock
+]
+
+export const tsFiles = [
+  tsconfig
 ]

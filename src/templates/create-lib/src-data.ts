@@ -14,9 +14,16 @@ export const Example{{ts? ": React.FC<{content: string}>"}} = ({content}) => {
 `]
 const reactComponentIndex: FileWithPath = ['src/react-components/Example/index.{{ts}}', 'export * from \'./ReactExample\'\n']
 const reactComponentTest: FileWithPath = ['src/react-components/__test__/ReactExample.test.{{ts}}x', 
-  `describe('Example tests', () => {
-  it('empty test', () => {
-    expect(true)
+  `import React from 'react'
+import {render} from '@testing-library/react'
+import {Example} from '../Example'
+
+describe('Example tests', () => {
+  it('content test', () => {
+    const {getByText} = render(
+      <Example content={'Test'}/>
+    )
+    expect(getByText('Test')).toBeInTheDocument()
   })
 })
 `]
@@ -26,13 +33,12 @@ const reactIndex: FileWithPath = ['src/react-components/index.{{ts}}', 'export *
 const webComponent: FileWithPath = ['src/web-components/example/webc-example.{{ts}}', 
   `import {html} from 'lit-html'
 {{ts? "import type {TemplateResult} from 'lit'"}}
-import {
-  customElement, property
-} from 'lit/decorators.js'
+{{ts? "import {"}}
+{{ts?   "customElement, property"}}
+{{ts? "} from 'lit/decorators.js'"}}
 
 import {BkBase} from '@micro-lc/back-kit-engine/base'
 {{ts? "import type {LocalizedText} from '@micro-lc/back-kit-engine/utils'"}}
-
 import {getText} from './webc-example.lib'
 
 /**
@@ -40,14 +46,18 @@ import {getText} from './webc-example.lib'
  * @title Example
  * @description simple example of a lit web component, displays a custom text, which can be localized
  */
-@customElement('bk-webc-example')
+{{ts? "@customElement('bk-webc-example')"}}
 export class BkExample extends BkBase {
   /**
    * @description localized text content to display.
    */
-  @property({attribute: false}) content{{ts? ": LocalizedText"}} = {
-    en: 'Example', it: 'Esempio'
-  }
+  {{ts? "@property({attribute: false}) content: LocalizedText = {en: 'Example', it: 'Esempio'}"}}
+  {{js? "static get properties() {return {content: {}}}"}}
+
+  {{js? "constructor () {"}}
+  {{js? "  super()"}}
+  {{js? "  this.content = {en: 'Example', it: 'Esempio'}"}}
+  {{js? "}"}}
 
   {{ts? "protected "}}render (){{ts? ": TemplateResult"}} {
     const localizedContent = getText.call(this)
@@ -58,6 +68,7 @@ export class BkExample extends BkBase {
     </div>\`
   }
 }
+{{js? "customElements.define('webc-example', BkExample)"}}
 `]
 const webComponentLib: FileWithPath = ['src/web-components/example/webc-example.lib.{{ts}}', 
   `import {
@@ -65,20 +76,19 @@ const webComponentLib: FileWithPath = ['src/web-components/example/webc-example.
 } from '@micro-lc/back-kit-engine/utils'
 {{ts? "import type {BkExample} from './webc-example'"}}
 
-export function getText (this{{ts? ": BkExample"}}){{ts? ": string"}} {
+export function getText ({{ts? "this: BkExample"}}){{ts? ": string"}} {
   return getLocalizedText(this.content, getNavigatorLanguage())
 }
 `]
 const webComponentTets: FileWithPath = ['src/web-components/example/__test__/webc-example.test.{{ts}}', 
   `import {runtime} from '@micro-lc/back-kit-engine/west'
-import {html} from 'lit-html'
+import {html} from '@open-wc/testing-helpers'
 import {getText} from '../webc-example.lib'
-
-import {{ts? type}} {BkExample} from '../webc-example'
+{{ts? "import {BkExample} from '../webc-example'"}}
 {{ts? import '../webc-example'}}
 
 runtime.describe('test', () => {
-  runtime.it<BkExample>('test example', async ({create}) => {
+  runtime.it{{ts? "<BkExample>"}}('test example', async ({create}) => {
     const el = await create({template: html\`<webc-example .content=\${'Test'}></webc-example>\`})
     expect(getText.call(el)).toEqual('Test')
   })
@@ -97,7 +107,8 @@ const webcIndex: FileWithPath = ['src/web-components/index.{{ts}}', 'export * fr
 
 const index: FileWithPath = ['src/index.{{ts}}', 'export * from \'./web-components\'\n']
 const testSetup: FileWithPath = ['src/testSetup.{{ts}}',
-  `import '@testing-library/jest-dom'
+  `{{js? "import 'jest'"}}
+import '@testing-library/jest-dom'
 
 jest.mock('@micro-lc/back-kit-engine/engine')
 Object.defineProperty(global, 'console', {
