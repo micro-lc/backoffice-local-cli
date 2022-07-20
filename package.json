@@ -1,13 +1,12 @@
 {
   "name": "@micro-lc/backoffice-local-cli",
   "description": "backend mocked resource management cli and util form `backoffice-local` development template",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "license": "SEE LICENSE IN LICENSE",
   "packageManager": "yarn@3.2.1",
-  "type": "module",
   "bin": {
     "create-lib": "./dist/create-lib/index.js",
-    "mgmt": "./dist/mgmt/index.js"
+    "mgmt": "./dist/mgmt/index.mjs"
   },
   "files": [
     "./dist",
@@ -15,11 +14,12 @@
   ],
   "scripts": {
     "clean": "rimraf dist",
+    "create-lib": "node ./dist/create-lib",
     "lint": "eslint . --ext .js,.ts",
-    "build:cli": "node ./scripts/build.js",
+    "build:cli": "node ./scripts/build.mjs",
     "check:types": "tsc",
     "build": "run-p check:types build:cli",
-    "mgmt": "NODE_NO_WARNINGS=1 NODE_OPTIONS=\"--experimental-json-modules\" ts-node-esm ./index.ts",
+    "mgmt": "node ./dist/mgmt/index.mjs",
     "test": "NODE_NO_WARNINGS=1 mocha",
     "coverage": "NODE_NO_WARNINGS=1 nyc mocha"
   },

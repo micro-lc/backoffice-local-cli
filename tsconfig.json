@@ -101,6 +101,8 @@
   "include": ["src/create-lib/createlib.ts", "src/mgmt/mgmt.ts", "package.json", "src", "src/templates/base_schema.json", "src/templates/create-lib/data.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
-    "files": true
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
   }
 }
