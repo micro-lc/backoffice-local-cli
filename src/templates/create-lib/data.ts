@@ -217,7 +217,7 @@ const packagejson: FileWithPath = ['package.json',
     "vite": "^2.9.5"
   },
   "dependencies": {
-    "@micro-lc/back-kit-engine": "^0.16.1",
+    "@micro-lc/back-kit-engine": "latest",
     "handlebars": "^4.7.7",
     "lit": "^2.1.2",
     "react": "^17.0.2",
