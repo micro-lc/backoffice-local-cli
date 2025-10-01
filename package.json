@@ -3,7 +3,7 @@
   "description": "backend mocked resource management cli and util form `backoffice-local` development template",
   "version": "0.3.5",
   "license": "SEE LICENSE IN LICENSE",
-  "packageManager": "yarn@3.2.1",
+  "packageManager": "yarn@4.10.3",
   "bin": {
     "create-lib": "./dist/create-lib/index.js",
     "mgmt": "./dist/mgmt/index.mjs"
