@@ -18,8 +18,8 @@ jobs:
     strategy:
       matrix:
         node-version:
-          - 16.x
-          - 17.x
+          - 20.x
+          - 22.x
     steps:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
@@ -38,10 +38,10 @@ jobs:
         path-to-lcov: '${{ env.context }}coverage/lcov.info'
         base-path: '${{ env.context }}'
     - name: Compile file and build
-      if: ${{ (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.base_ref == 'main') && matrix.node-version == '16.x' }}
+      if: ${{ (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.base_ref == 'main') && matrix.node-version == '22.x' }}
       run: yarn build
     - name: Cache build
-      if: ${{ (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.base_ref == 'main') && matrix.node-version == '16.x' }}
+      if: ${{ (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.base_ref == 'main') && matrix.node-version == '22.x' }}
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: ${{ env.context }}dist
