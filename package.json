@@ -5,8 +5,11 @@
   "license": "SEE LICENSE IN LICENSE",
   "packageManager": "yarn@4.10.3",
   "bin": {
-    "create-lib": "./dist/create-lib/index.js",
-    "mgmt": "./dist/mgmt/index.mjs"
+    "create-lib": "dist/create-lib/index.js",
+    "mgmt": "dist/mgmt/index.mjs"
+  },
+  "repository": {
+    "url": "git+https://github.com/micro-lc/backoffice-local-cli.git"
   },
   "files": [
     "./dist",
